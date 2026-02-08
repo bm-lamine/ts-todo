@@ -1,3 +1,4 @@
+import { env } from "common/env";
 import { router } from "common/lib/hono";
 import { showRoutes } from "hono/dev";
 import { etag } from "hono/etag";
@@ -10,4 +11,7 @@ const app = router()
 
 showRoutes(app);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  port: env.PORT,
+};

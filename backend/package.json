@@ -10,7 +10,9 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "hono": "^4.11.9"
+    "@t3-oss/env-core": "^0.13.10",
+    "hono": "^4.11.9",
+    "zod": "^4.3.6"
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts"
