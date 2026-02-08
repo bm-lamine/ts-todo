@@ -7,6 +7,10 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "production", "testing"])
       .default("development"),
+    DATABASE_URL: z
+      .url()
+      .default("postgresql://postgres:postgres@localhost:5432/postgres"),
+    REDIS_URL: z.url().default("redis://localhost:6379"),
   },
 
   /**
