@@ -7,8 +7,10 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "production", "testing"])
       .default("development"),
-    DATABASE_URL: z.url(),
-    REDIS_URL: z.url(),
+    DATABASE_URL: z.url().trim(),
+    REDIS_URL: z.url().trim(),
+    JWT_SECRET: z.string().trim(),
+    HASH_SECRET: z.string().trim(),
   },
 
   /**
