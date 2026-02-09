@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import { nanoid } from "nanoid";
-import type { TMagicLinkOptions } from "src/@types/auth";
 import { hash, safeCompare } from "src/helpers/crypto-hash";
 import { getCache } from "src/helpers/get-cache";
 import forget from "src/helpers/promise-forget";
@@ -14,7 +13,7 @@ export const INTENT_HASH_KEY = (tokenHash: string) =>
 export const INTENT_HASH_TTL = TTL["15m"];
 
 export async function generateMagicLink(
-  options: TMagicLinkOptions,
+  options: MagicLinkModel.Generate,
 ): Promise<string> {
   const token = nanoid(128);
   const json = JSON.stringify({

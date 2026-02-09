@@ -14,6 +14,13 @@ export namespace MagicLinkModel {
   });
   export type Payload = z.infer<typeof payload>;
 
+  export const generate = z.object({
+    email: z.email().trim(),
+    userAgent: z.string().trim(),
+    ipAddress: z.string().trim().optional(),
+  });
+  export type Generate = z.infer<typeof generate>;
+
   export const consume = z.object({
     token: z.string().trim(),
     userAgent: z.string().trim(),
