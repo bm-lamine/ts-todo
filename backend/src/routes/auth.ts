@@ -1,13 +1,17 @@
 import { Hono } from "hono";
 import { getConnInfo } from "hono/bun";
+import type { JwtVariables } from "hono/jwt";
 import { env } from "src/config/env";
 import ErrorFactory from "src/helpers/error-factory";
 import STATUS_CODE from "src/helpers/status-code";
 import { parser } from "src/middlewares/request-parser";
+import { requireJwt } from "src/middlewares/require.jwt";
 import { MagicLinkModel } from "src/models/auth.model";
+import { JwtModel } from "src/models/jwt.model";
 import { findOrCreateUser } from "src/repo/users";
-import { authenticate } from "src/services/jwt";
+import { authenticate, refreshAuth, revokeJWT } from "src/services/jwt";
 import { consumeMagicLink, generateMagicLink } from "src/services/magic-link";
+
 export const auth = new Hono();
 
 auth.route(
@@ -52,6 +56,26 @@ auth.route(
           tokens: await authenticate(user.id),
           message: "user created successfully",
         });
+      },
+    ),
+);
+
+auth.route(
+  "/tokens",
+  new Hono<{ Variables: JwtVariables<JwtModel.Payload> }>()
+    .post("/refresh", parser("json", JwtModel.refresh), async function (ctx) {
+      const { token: incomingToken } = ctx.req.valid("json");
+      const { accessToken, refreshToken } = await refreshAuth(incomingToken);
+      return ctx.json({ accessToken, refreshToken });
+    })
+    .post(
+      "/revoke",
+      requireJwt,
+      parser("json", JwtModel.refresh),
+      async function (ctx) {
+        const { sub } = ctx.get("jwtPayload");
+        await revokeJWT(sub, ctx.req.valid("json").token);
+        return ctx.json({ success: true });
       },
     ),
 );
