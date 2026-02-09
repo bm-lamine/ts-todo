@@ -11,14 +11,17 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
     "@t3-oss/env-core": "^0.13.10",
     "drizzle-orm": "^0.45.1",
+    "hono": "^4.11.9",
     "ioredis": "^5.9.2",
     "nanoid": "^5.1.6",
     "postgres": "^3.4.8",
     "zod": "^4.3.6"
   },
   "scripts": {
+    "dev": "bun run --hot src/main.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:drop": "drizzle-kit drop",
