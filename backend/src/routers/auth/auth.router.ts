@@ -5,14 +5,14 @@ import { env } from "src/config/env";
 import ErrorFactory from "src/helpers/error-factory";
 import STATUS_CODE from "src/helpers/status-code";
 import { parser } from "src/middlewares/request-parser";
-import { requireJwt } from "src/middlewares/require.jwt";
+import { requireJwt } from "src/middlewares/require-jwt";
 import { MagicLinkModel } from "src/models/auth.model";
 import { JwtModel } from "src/models/jwt.model";
-import { findOrCreateUser } from "src/repo/users";
-import { authenticate, refreshAuth, revokeJWT } from "src/services/jwt";
-import { consumeMagicLink, generateMagicLink } from "src/services/magic-link";
+import UsersRepo from "src/repo/users.repo";
+import JwtService from "src/services/jwt.service";
+import MagicLinkService from "src/services/magicLink.service";
 
-export const auth = new Hono();
+const auth = new Hono();
 
 auth.route(
   "/magic-link",
@@ -21,7 +21,7 @@ auth.route(
       "/intent",
       parser("json", MagicLinkModel.intent),
       async function (ctx) {
-        const token = await generateMagicLink({
+        const token = await MagicLinkService.generate({
           email: ctx.req.valid("json").email,
           userAgent: ctx.req.header("User-Agent") ?? "unknown",
         });
@@ -42,8 +42,17 @@ auth.route(
         const userAgent = ctx.req.header("User-Agent") ?? "unknown";
         const ipAddress = getConnInfo(ctx).remote.address;
 
-        const email = await consumeMagicLink({ token, userAgent, ipAddress });
-        const user = await findOrCreateUser({ email, userAgent, ipAddress });
+        const email = await MagicLinkService.consume({
+          token,
+          userAgent,
+          ipAddress,
+        });
+
+        const user = await UsersRepo.findOrCreate({
+          email,
+          userAgent,
+          ipAddress,
+        });
 
         if (!user) {
           return ctx.json(
@@ -53,7 +62,7 @@ auth.route(
         }
 
         return ctx.json({
-          tokens: await authenticate(user.id),
+          tokens: await JwtService.authenticate(user.id),
           message: "user created successfully",
         });
       },
@@ -65,7 +74,8 @@ auth.route(
   new Hono<{ Variables: JwtVariables<JwtModel.Payload> }>()
     .post("/refresh", parser("json", JwtModel.refresh), async function (ctx) {
       const { token: incomingToken } = ctx.req.valid("json");
-      const { accessToken, refreshToken } = await refreshAuth(incomingToken);
+      const { accessToken, refreshToken } =
+        await JwtService.refresh(incomingToken);
       return ctx.json({ accessToken, refreshToken });
     })
     .post(
@@ -74,8 +84,10 @@ auth.route(
       parser("json", JwtModel.refresh),
       async function (ctx) {
         const { sub } = ctx.get("jwtPayload");
-        await revokeJWT(sub, ctx.req.valid("json").token);
+        await JwtService.revoke(sub, ctx.req.valid("json").token);
         return ctx.json({ success: true });
       },
     ),
 );
+
+export default auth;
