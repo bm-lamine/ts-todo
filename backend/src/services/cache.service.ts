@@ -1,5 +1,10 @@
-import redis from "src/redis";
+import Redis from "ioredis";
+import { env } from "src/config/env";
 import type { z, ZodType } from "zod";
+
+export const redis = new Redis(env.REDIS_URL)
+  .on("error", (err) => console.error("Redis error:", err))
+  .on("connect", () => console.log("Connected to Redis"));
 
 export default class CacheService {
   static async get<T extends ZodType>(

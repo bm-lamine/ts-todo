@@ -1,9 +1,14 @@
 import z from "zod";
 
-export namespace JwtModel {
-  export const payload = z.object({ sub: z.string() });
-  export type Payload = z.infer<typeof payload>;
+export default class JwtModel {
+  static payload = z.object({
+    sub: z.string(),
+  });
 
-  export const refresh = z.object({ token: z.string().trim() });
-  export type Refresh = z.infer<typeof refresh>;
+  static refresh = z.object({
+    refreshToken: z.string().trim(),
+  });
 }
+
+export type TJwtPayload = z.infer<typeof JwtModel.payload>;
+export type TJwtRefresh = z.infer<typeof JwtModel.refresh>;

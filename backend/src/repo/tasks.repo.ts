@@ -1,10 +1,9 @@
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "src/db";
+import { TTL } from "src/helpers/constants";
 import forget from "src/helpers/promise-forget";
 import TaskModel, { type TTaskCreateInput } from "src/models/tasks.model";
-import redis from "src/redis";
-import { TTL } from "src/redis/constants";
-import CacheService from "src/services/cache.service";
+import CacheService, { redis } from "src/services/cache.service";
 import z from "zod";
 
 export default class TasksRepo {

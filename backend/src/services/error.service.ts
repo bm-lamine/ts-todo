@@ -3,7 +3,7 @@ export type Failure = {
   message: string;
 };
 
-export default class ErrorFactory {
+export default class ErrorService {
   private readonly _errors: readonly Failure[];
 
   // Set a default status (400) so the constructor is always satisfied
@@ -12,13 +12,13 @@ export default class ErrorFactory {
   }
 
   /** Static helper to initialize from an array */
-  static from(errors: Failure[]): ErrorFactory {
-    return new ErrorFactory(errors);
+  static from(errors: Failure[]): ErrorService {
+    return new ErrorService(errors);
   }
 
   /** Helper to create a factory from a single error */
-  static single(message: string, path?: PropertyKey[]): ErrorFactory {
-    return new ErrorFactory([{ message, path }]);
+  static single(message: string, path?: PropertyKey[]): ErrorService {
+    return new ErrorService([{ message, path }]);
   }
 
   get errors(): readonly Failure[] {

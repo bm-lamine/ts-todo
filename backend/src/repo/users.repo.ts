@@ -1,11 +1,10 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "src/db";
+import { TTL } from "src/helpers/constants";
 import forget from "src/helpers/promise-forget";
 import type { TUser, TUserCreateInput } from "src/models/users.model";
 import UsersModel from "src/models/users.model";
-import redis from "src/redis";
-import { TTL } from "src/redis/constants";
-import CacheService from "src/services/cache.service";
+import CacheService, { redis } from "src/services/cache.service";
 
 export default class UsersRepo {
   static USERS_KEY = "users";

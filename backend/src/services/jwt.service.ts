@@ -1,18 +1,19 @@
 import { HTTPException } from "hono/http-exception";
 import * as jwt from "hono/jwt";
 import { env } from "src/config/env";
-import { hash } from "src/helpers/crypto-hash";
+import { TTL } from "src/helpers/constants";
 import STATUS_CODE from "src/helpers/status-code";
-import { JwtModel } from "src/models/jwt.model";
-import redis from "src/redis";
-import { TTL } from "src/redis/constants";
+import type { TJwtPayload } from "src/models/jwt.model";
+import JwtModel from "src/models/jwt.model";
+import { redis } from "./cache.service";
+import HashService from "./hash.service";
 
 export default class JwtService {
-  static REFRESH_KEY = (userId: string) => `auth:refresh:${userId}`;
   static ACCESS_TTL = TTL["5m"];
+  static REFRESH_KEY = (userId: string) => `auth:refresh:${userId}`;
   static REFRESH_TTL = TTL["7d"];
 
-  static sign = async (payload: JwtModel.Payload, ttl: number) => {
+  static sign = async (payload: TJwtPayload, ttl: number) => {
     const now = Math.floor(Date.now() / 1000);
     return await jwt.sign(
       { ...payload, iat: now, exp: now + ttl },
@@ -39,7 +40,7 @@ export default class JwtService {
 
     await redis
       .multi()
-      .sadd(this.REFRESH_KEY(userId), hash(refreshToken))
+      .sadd(this.REFRESH_KEY(userId), HashService.hash(refreshToken))
       .expire(this.REFRESH_KEY(userId), this.REFRESH_TTL, "NX")
       .exec();
 
@@ -56,7 +57,7 @@ export default class JwtService {
 
     const exists = await redis.sismember(
       this.REFRESH_KEY(payload.sub),
-      hash(token),
+      HashService.hash(token),
     );
     if (!exists) {
       throw new HTTPException(STATUS_CODE.UNAUTHORIZED, {
@@ -71,8 +72,8 @@ export default class JwtService {
 
     await redis
       .multi()
-      .srem(this.REFRESH_KEY(payload.sub), hash(token))
-      .sadd(this.REFRESH_KEY(payload.sub), hash(refreshToken))
+      .srem(this.REFRESH_KEY(payload.sub), HashService.hash(token))
+      .sadd(this.REFRESH_KEY(payload.sub), HashService.hash(refreshToken))
       .expire(this.REFRESH_KEY(payload.sub), this.REFRESH_TTL, "NX")
       .exec();
 
@@ -80,7 +81,8 @@ export default class JwtService {
   }
 
   static async revoke(userId: string, token?: string) {
-    if (token) await redis.srem(this.REFRESH_KEY(userId), hash(token));
+    if (token)
+      await redis.srem(this.REFRESH_KEY(userId), HashService.hash(token));
     else await redis.del(this.REFRESH_KEY(userId));
   }
 }

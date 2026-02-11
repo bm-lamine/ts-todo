@@ -2,15 +2,15 @@ import { Hono } from "hono";
 import { getConnInfo } from "hono/bun";
 import type { JwtVariables } from "hono/jwt";
 import { env } from "src/config/env";
-import ErrorFactory from "src/helpers/error-factory";
 import STATUS_CODE from "src/helpers/status-code";
-import { parser } from "src/middlewares/request-parser";
-import { requireJwt } from "src/middlewares/require-jwt";
-import { MagicLinkModel } from "src/models/auth.model";
-import { JwtModel } from "src/models/jwt.model";
+import parser from "src/middlewares/request-parser";
+import requireJwt from "src/middlewares/require-jwt";
+import JwtModel, { type TJwtPayload } from "src/models/jwt.model";
+import MagicLinkModel from "src/models/magic-link.model";
 import UsersRepo from "src/repo/users.repo";
+import ErrorFactory from "src/services/error.service";
 import JwtService from "src/services/jwt.service";
-import MagicLinkService from "src/services/magicLink.service";
+import MagicLinkService from "src/services/magic-link.service";
 
 const auth = new Hono();
 
@@ -71,9 +71,9 @@ auth.route(
 
 auth.route(
   "/tokens",
-  new Hono<{ Variables: JwtVariables<JwtModel.Payload> }>()
+  new Hono<{ Variables: JwtVariables<TJwtPayload> }>()
     .post("/refresh", parser("json", JwtModel.refresh), async function (ctx) {
-      const { token: incomingToken } = ctx.req.valid("json");
+      const { refreshToken: incomingToken } = ctx.req.valid("json");
       const { accessToken, refreshToken } =
         await JwtService.refresh(incomingToken);
       return ctx.json({ accessToken, refreshToken });
@@ -84,7 +84,8 @@ auth.route(
       parser("json", JwtModel.refresh),
       async function (ctx) {
         const { sub } = ctx.get("jwtPayload");
-        await JwtService.revoke(sub, ctx.req.valid("json").token);
+        const { refreshToken } = ctx.req.valid("json");
+        await JwtService.revoke(sub, refreshToken);
         return ctx.json({ success: true });
       },
     ),
